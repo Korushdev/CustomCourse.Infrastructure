@@ -81,7 +81,8 @@ resource "aws_iam_role_policy" "codebuild_policy" {
           "lambda:UpdateFunctionCode"
         ]
         Resource = [
-          "arn:aws:lambda:*:*:function:${var.ssr_lambda_function_name}"
+          "arn:aws:lambda:*:*:function:${var.ssr_lambda_function_name}",
+          "arn:aws:lambda:*:*:function:${var.api_lambda_function_name}"
         ]
       },
       {
@@ -207,6 +208,49 @@ resource "aws_codebuild_project" "ui_build" {
   }
 }
 
+resource "aws_codebuild_project" "api_build" {
+  name          = "${var.project_name}-${var.environment}-api-build"
+  description   = "Builds the .NET 10 API and deploys to Lambda"
+  service_role  = aws_iam_role.codebuild_role.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:8.0"
+    type                        = "LINUX_CONTAINER"
+    privileged_mode             = false
+    
+    environment_variable {
+      name  = "API_LAMBDA_FUNCTION_NAME"
+      value = var.api_lambda_function_name
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = <<-EOF
+      version: 0.2
+      phases:
+        install:
+          commands:
+            - wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+            - chmod +x dotnet-install.sh
+            - ./dotnet-install.sh --channel 10.0
+            - export PATH="$PATH:/root/.dotnet"
+        build:
+          commands:
+            - dotnet publish -c Release -o out
+        post_build:
+          commands:
+            - cd out && zip -r ../lambda-api.zip . && cd ..
+            - aws lambda update-function-code --function-name $API_LAMBDA_FUNCTION_NAME --zip-file fileb://lambda-api.zip
+    EOF
+  }
+}
+
 # CodePipelines
 resource "aws_codepipeline" "ui_pipeline" {
   name     = "${var.project_name}-${var.environment}-ui-pipeline"
@@ -250,6 +294,53 @@ resource "aws_codepipeline" "ui_pipeline" {
 
       configuration = {
         ProjectName = aws_codebuild_project.ui_build.name
+      }
+    }
+  }
+}
+
+resource "aws_codepipeline" "api_pipeline" {
+  name     = "${var.project_name}-${var.environment}-api-pipeline"
+  role_arn = aws_iam_role.codepipeline_role.arn
+
+  artifact_store {
+    location = aws_s3_bucket.codepipeline_artifacts.bucket
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
+      version          = "1"
+      output_artifacts = ["source_output"]
+
+      configuration = {
+        ConnectionArn    = var.github_connection_arn
+        FullRepositoryId = var.api_repo_id
+        BranchName       = var.api_branch
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name             = "Build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["build_output"]
+      version          = "1"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.api_build.name
       }
     }
   }

@@ -125,7 +125,9 @@ module "cicd" {
   environment                = var.environment
   github_connection_arn      = var.github_connection_arn
   ui_repo_id                 = var.ui_repo_id
+  api_repo_id                = var.api_repo_id
   website_bucket_id          = module.website_s3.bucket_id
-  ssr_lambda_function_name       = module.lambda_api.ssr_lambda_function_name
+  ssr_lambda_function_name   = module.lambda_api.ssr_lambda_function_name
+  api_lambda_function_name   = module.lambda_api.api_lambda_function_name
   cloudfront_distribution_id = module.cloudfront.cloudfront_distribution_id
 }

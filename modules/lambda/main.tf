@@ -98,8 +98,9 @@ resource "aws_lambda_function" "api" {
   filename      = data.archive_file.lambda_zip.output_path
   function_name = "${var.project_name}-${var.environment}-api"
   role          = aws_iam_role.lambda_exec.arn
-  handler       = "index.handler"
-  runtime       = "nodejs18.x"
+  handler       = "api::api.LambdaEntryPoint::FunctionHandlerAsync"
+  runtime       = "dotnet10"
+  architectures = ["x86_64"]
 
   vpc_config {
     subnet_ids         = var.subnet_ids
