@@ -28,3 +28,16 @@ override.tf.json
 
 # Include plugin cache directories
 .terraform.lock.hcl
+
+.vs
+.idea
+bin
+obj
+debug.log
+.vscode
+*.sln.user
+.DS_Store
+*.sln.DotSettings.user
+*.csproj.user
+.env
+.idea/
