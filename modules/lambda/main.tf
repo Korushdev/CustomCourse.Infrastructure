@@ -191,8 +191,8 @@ resource "aws_lambda_function" "ssr" {
   filename      = data.archive_file.lambda_zip.output_path
   function_name = "${var.project_name}-${var.environment}-ssr"
   role          = aws_iam_role.lambda_exec.arn
-  handler       = "index.handler"
-  runtime       = "nodejs18.x"
+  handler       = "server.handler"
+  runtime       = "nodejs24.x"
 
   vpc_config {
     subnet_ids         = var.subnet_ids
@@ -202,6 +202,7 @@ resource "aws_lambda_function" "ssr" {
   environment {
     variables = {
       S3_BUCKET = var.website_bucket_id
+      NG_ALLOWED_HOSTS = aws_apigatewayv2_api.main.api_endpoint
     }
   }
 

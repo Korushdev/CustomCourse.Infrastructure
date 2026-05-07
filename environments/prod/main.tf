@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -31,7 +31,7 @@ module "assets_s3" {
   source      = "../../modules/s3"
   project_name = var.project_name
   environment = var.environment
-  bucket_name = "generic-assets"
+  bucket_name = "assets"
   is_website  = false
 }
 
@@ -39,7 +39,7 @@ module "website_s3" {
   source      = "../../modules/s3"
   project_name = var.project_name
   environment = var.environment
-  bucket_name = "angular-ssr-website"
+  bucket_name = "angular"
   is_website  = true
 }
 
@@ -62,7 +62,7 @@ module "rds" {
   environment               = var.environment
   vpc_id                    = module.vpc.vpc_id
   subnet_ids                = module.vpc.public_subnet_ids
-  master_password           = var.db_password
+  master_password           = data.aws_secretsmanager_secret_version.db_password.secret_string
   allowed_security_group_id = module.lambda_api.lambda_sg_id
 }
 
@@ -82,8 +82,7 @@ module "cicd" {
   environment                = var.environment
   github_connection_arn      = var.github_connection_arn
   ui_repo_id                 = var.ui_repo_id
-  api_repo_id                 = var.api_repo_id
   website_bucket_id          = module.website_s3.bucket_id
-  lambda_function_name       = module.lambda_api.ssr_lambda_function_name
+  ssr_lambda_function_name       = module.lambda_api.ssr_lambda_function_name
   cloudfront_distribution_id = module.cloudfront.cloudfront_distribution_id
 }

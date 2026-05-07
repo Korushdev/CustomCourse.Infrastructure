@@ -1,5 +1,5 @@
 resource "aws_db_subnet_group" "rds" {
-  name       = "${var.project_name}-${var.environment}-rds-subnet-group"
+  name       = lower("${var.project_name}-${var.environment}-rds-subnet-group")
   subnet_ids = var.subnet_ids
 
   tags = {
@@ -36,10 +36,10 @@ resource "aws_security_group" "rds" {
 }
 
 resource "aws_rds_cluster" "aurora" {
-  cluster_identifier      = "${var.project_name}-${var.environment}-aurora-cluster"
+  cluster_identifier      = lower("${var.project_name}-${var.environment}-aurora-cluster")
   engine                  = "aurora-postgresql"
-  engine_mode             = "provisioned" # For Serverless v2
-  engine_version          = "13.6"        # Example version
+  engine_mode             = "provisioned" 
+  engine_version          = "17.9"        
   database_name           = var.db_name
   master_username         = var.master_username
   master_password         = var.master_password
@@ -50,7 +50,7 @@ resource "aws_rds_cluster" "aurora" {
 
   serverlessv2_scaling_configuration {
     max_capacity = 1.0
-    min_capacity = 0.5
+    min_capacity = 0
   }
 
   tags = {

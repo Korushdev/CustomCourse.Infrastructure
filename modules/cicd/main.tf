@@ -1,5 +1,9 @@
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
 resource "aws_s3_bucket" "codepipeline_artifacts" {
-  bucket = "${var.project_name}-${var.environment}-pipeline-artifacts"
+  bucket           = lower(format("%s-%s-%s-an", "${var.project_name}-${var.environment}-build", data.aws_caller_identity.current.account_id, data.aws_region.current.region))
+  bucket_namespace = "account-regional"
   force_destroy = true
 }
 
@@ -63,10 +67,20 @@ resource "aws_iam_role_policy" "codebuild_policy" {
       {
         Effect   = "Allow"
         Action   = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.codepipeline_artifacts.arn,
+          "arn:aws:s3:::${var.website_bucket_id}"
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
           "lambda:UpdateFunctionCode"
         ]
         Resource = [
-          "arn:aws:lambda:*:*:function:${var.lambda_function_name}"
+          "arn:aws:lambda:*:*:function:${var.ssr_lambda_function_name}"
         ]
       },
       {
@@ -148,7 +162,7 @@ resource "aws_codebuild_project" "ui_build" {
 
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:7.0"
+    image                       = "aws/codebuild/standard:8.0"
     type                        = "LINUX_CONTAINER"
     privileged_mode             = false
     
@@ -161,53 +175,10 @@ resource "aws_codebuild_project" "ui_build" {
       name  = "CLOUDFRONT_DISTRIBUTION_ID"
       value = var.cloudfront_distribution_id
     }
-  }
-
-  source {
-    type      = "CODEPIPELINE"
-    buildspec = <<-EOF
-      version: 0.2
-      phases:
-        install:
-          runtime-versions:
-            nodejs: 18
-        pre_build:
-          commands:
-            - npm install
-        build:
-          commands:
-            - npm run build
-        post_build:
-          commands:
-            - aws s3 sync dist/ s3://$BUCKET_ID/ --delete
-            - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
-    EOF
-  }
-}
-
-resource "aws_codebuild_project" "api_build" {
-  name          = "${var.project_name}-${var.environment}-api-build"
-  description   = "Builds the API and updates Lambda"
-  service_role  = aws_iam_role.codebuild_role.arn
-
-  artifacts {
-    type = "CODEPIPELINE"
-  }
-
-  environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:7.0"
-    type                        = "LINUX_CONTAINER"
-    privileged_mode             = false
-
+    
     environment_variable {
-      name  = "FUNCTION_NAME"
-      value = var.lambda_function_name
-    }
-
-    environment_variable {
-      name  = "CLOUDFRONT_DISTRIBUTION_ID"
-      value = var.cloudfront_distribution_id
+      name  = "SSR_LAMBDA_FUNCTION_NAME"
+      value = var.ssr_lambda_function_name
     }
   }
 
@@ -218,7 +189,7 @@ resource "aws_codebuild_project" "api_build" {
       phases:
         install:
           runtime-versions:
-            nodejs: 18
+            nodejs: 20
         pre_build:
           commands:
             - npm install
@@ -227,8 +198,9 @@ resource "aws_codebuild_project" "api_build" {
             - npm run build
         post_build:
           commands:
-            - zip -r deploy.zip .
-            - aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb://deploy.zip
+            - aws s3 sync dist/FrontEnd/browser s3://$BUCKET_ID/ --delete
+            - cd dist/FrontEnd/server && zip -r ../../../lambda-ssr.zip . && cd ../../..
+            - aws lambda update-function-code --function-name $SSR_LAMBDA_FUNCTION_NAME --zip-file fileb://lambda-ssr.zip
             - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
     EOF
   }
@@ -277,53 +249,6 @@ resource "aws_codepipeline" "ui_pipeline" {
 
       configuration = {
         ProjectName = aws_codebuild_project.ui_build.name
-      }
-    }
-  }
-}
-
-resource "aws_codepipeline" "api_pipeline" {
-  name     = "${var.project_name}-${var.environment}-api-pipeline"
-  role_arn = aws_iam_role.codepipeline_role.arn
-
-  artifact_store {
-    location = aws_s3_bucket.codepipeline_artifacts.bucket
-    type     = "S3"
-  }
-
-  stage {
-    name = "Source"
-
-    action {
-      name             = "Source"
-      category         = "Source"
-      owner            = "AWS"
-      provider         = "CodeStarSourceConnection"
-      version          = "1"
-      output_artifacts = ["source_output"]
-
-      configuration = {
-        ConnectionArn    = var.github_connection_arn
-        FullRepositoryId = var.api_repo_id
-        BranchName       = var.api_branch
-      }
-    }
-  }
-
-  stage {
-    name = "Build"
-
-    action {
-      name             = "Build"
-      category         = "Build"
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      input_artifacts  = ["source_output"]
-      output_artifacts = ["build_output"]
-      version          = "1"
-
-      configuration = {
-        ProjectName = aws_codebuild_project.api_build.name
       }
     }
   }

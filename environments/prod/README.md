@@ -1,6 +1,6 @@
-# Infrastructure Starter Project
+# Infrastructure CustomCourse Project
 
-This project contains the Terraform infrastructure for a generic starter project, supporting multiple environments (dev, uat, prod).
+This project contains the Terraform infrastructure for a generic CustomCourse project, supporting multiple environments (dev, uat, prod).
 
 ## Project Structure
 
