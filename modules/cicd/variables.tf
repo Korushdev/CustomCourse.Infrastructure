@@ -24,6 +24,17 @@ variable "ui_branch" {
   default     = "main"
 }
 
+variable "api_repo_id" {
+  description = "GitHub repository ID for the API (e.g., owner/repo)"
+  type        = string
+}
+
+variable "api_branch" {
+  description = "Branch for the API repository"
+  type        = string
+  default     = "main"
+}
+
 variable "website_bucket_id" {
   description = "S3 bucket ID for the website"
   type        = string
@@ -31,6 +42,11 @@ variable "website_bucket_id" {
 
 variable "ssr_lambda_function_name" {
   description = "Name of the SSR Lambda function to update"
+  type        = string
+}
+
+variable "api_lambda_function_name" {
+  description = "Name of the API Lambda function to update"
   type        = string
 }
 

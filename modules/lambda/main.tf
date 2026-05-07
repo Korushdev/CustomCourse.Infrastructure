@@ -187,6 +187,29 @@ resource "aws_lambda_permission" "api_gw" {
   source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 }
 
+resource "aws_apigatewayv2_domain_name" "api" {
+  count       = var.api_domain_name != "" ? 1 : 0
+  domain_name = var.api_domain_name
+
+  domain_name_configuration {
+    certificate_arn = var.certificate_arn
+    endpoint_type   = "REGIONAL"
+    security_policy = "TLS_1_2"
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_apigatewayv2_api_mapping" "api" {
+  count       = var.api_domain_name != "" ? 1 : 0
+  api_id      = aws_apigatewayv2_api.main.id
+  domain_name = aws_apigatewayv2_domain_name.api[0].id
+  stage       = aws_apigatewayv2_stage.main.id
+}
+
 resource "aws_lambda_function" "ssr" {
   filename      = data.archive_file.lambda_zip.output_path
   function_name = "${var.project_name}-${var.environment}-ssr"
@@ -292,4 +315,12 @@ output "lambda_sg_id" {
 
 output "api_endpoint" {
   value = aws_apigatewayv2_api.main.api_endpoint
+}
+
+output "api_gateway_domain_name" {
+  value = var.api_domain_name != "" ? aws_apigatewayv2_domain_name.api[0].domain_name_configuration[0].target_domain_name : ""
+}
+
+output "api_gateway_hosted_zone_id" {
+  value = var.api_domain_name != "" ? aws_apigatewayv2_domain_name.api[0].domain_name_configuration[0].hosted_zone_id : ""
 }

@@ -44,3 +44,8 @@ variable "api_repo_id" {
   description = "GitHub repository ID for the API"
   type        = string
 }
+
+variable "domain_name" {
+  description = "Custom domain name"
+  type        = string
+}

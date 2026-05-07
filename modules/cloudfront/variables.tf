@@ -27,3 +27,15 @@ variable "ssr_api_endpoint" {
   description = "Endpoint of the SSR API Gateway"
   type        = string
 }
+
+variable "domain_name" {
+  description = "Custom domain name"
+  type        = string
+  default     = ""
+}
+
+variable "certificate_arn" {
+  description = "ACM certificate ARN"
+  type        = string
+  default     = ""
+}

@@ -17,6 +17,45 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+  default_tags {
+    tags = {
+      Project     = var.project_name
+      Environment = var.environment
+    }
+  }
+}
+
+module "dns" {
+  source                    = "../../modules/dns"
+  project_name              = var.project_name
+  environment               = var.environment
+  domain_name               = var.domain_name
+  cloudfront_domain_name    = module.cloudfront.cloudfront_domain_name
+  cloudfront_hosted_zone_id = module.cloudfront.cloudfront_hosted_zone_id
+  api_gateway_domain_name   = module.lambda_api.api_gateway_domain_name
+  api_gateway_hosted_zone_id = module.lambda_api.api_gateway_hosted_zone_id
+}
+
+module "acm_cloudfront" {
+  source                    = "../../modules/acm"
+  project_name              = var.project_name
+  environment               = var.environment
+  domain_name               = var.domain_name
+  subject_alternative_names = ["*.${var.domain_name}"]
+  zone_id                   = module.dns.zone_id
+}
+
+module "acm_api" {
+  source       = "../../modules/acm"
+  project_name = var.project_name
+  environment  = var.environment
+  domain_name  = "api.${var.domain_name}"
+  zone_id      = module.dns.zone_id
+}
+
 module "vpc" {
   source               = "../../modules/vpc"
   project_name         = var.project_name
@@ -54,6 +93,8 @@ module "lambda_api" {
   website_bucket_arn = module.website_s3.bucket_arn
   website_bucket_id  = module.website_s3.bucket_id
   log_retention_days = 7
+  api_domain_name    = "api.${var.domain_name}"
+  certificate_arn    = module.acm_api.certificate_arn
 }
 
 module "rds" {
@@ -74,6 +115,8 @@ module "cloudfront" {
   website_bucket_arn         = module.website_s3.bucket_arn
   website_bucket_domain_name = module.website_s3.bucket_domain_name
   ssr_api_endpoint           = module.lambda_api.ssr_api_endpoint
+  domain_name                = var.domain_name
+  certificate_arn            = module.acm_cloudfront.certificate_arn
 }
 
 module "cicd" {

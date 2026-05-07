@@ -33,6 +33,8 @@ resource "aws_cloudfront_distribution" "this" {
   is_ipv6_enabled     = true
   default_root_object = "" # No default root object when using SSR for root
 
+  aliases = var.domain_name != "" ? [var.domain_name] : []
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods   = ["GET", "HEAD"]
@@ -97,7 +99,10 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = var.certificate_arn == "" ? true : false
+    acm_certificate_arn            = var.certificate_arn
+    ssl_support_method             = var.certificate_arn != "" ? "sni-only" : null
+    minimum_protocol_version       = var.certificate_arn != "" ? "TLSv1.2_2021" : null
   }
 
   tags = {
@@ -136,4 +141,8 @@ output "cloudfront_domain_name" {
 
 output "cloudfront_distribution_id" {
   value = aws_cloudfront_distribution.this.id
+}
+
+output "cloudfront_hosted_zone_id" {
+  value = aws_cloudfront_distribution.this.hosted_zone_id
 }

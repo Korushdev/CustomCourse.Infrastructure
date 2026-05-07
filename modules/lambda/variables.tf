@@ -45,3 +45,15 @@ variable "log_retention_days" {
   type        = number
   default     = 7
 }
+
+variable "api_domain_name" {
+  description = "Custom domain name for API"
+  type        = string
+  default     = ""
+}
+
+variable "certificate_arn" {
+  description = "ACM certificate ARN for API"
+  type        = string
+  default     = ""
+}
