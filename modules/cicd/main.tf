@@ -55,7 +55,8 @@ resource "aws_iam_role_policy" "codebuild_policy" {
           "s3:GetObject",
           "s3:GetObjectVersion",
           "s3:GetBucketVersioning",
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:DeleteObject"
         ]
         Resource = [
           aws_s3_bucket.codepipeline_artifacts.arn,
@@ -189,7 +190,7 @@ resource "aws_codebuild_project" "ui_build" {
       phases:
         install:
           runtime-versions:
-            nodejs: 20
+            nodejs: 24
         pre_build:
           commands:
             - npm install

@@ -137,15 +137,15 @@ resource "aws_apigatewayv2_stage" "main" {
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gw.arn
-    format          = jsonencode({
-      requestId               = "$context.requestId"
-      sourceIp                = "$context.identity.sourceIp"
-      requestTime             = "$context.requestTime"
-      httpMethod              = "$context.httpMethod"
-      resourcePath            = "$context.resourcePath"
-      status                  = "$context.status"
-      protocol                = "$context.protocol"
-      responseLength          = "$context.responseLength"
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      sourceIp       = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      resourcePath   = "$context.resourcePath"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
     })
   }
 
@@ -166,10 +166,10 @@ resource "aws_cloudwatch_log_group" "api_gw" {
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
-  api_id             = aws_apigatewayv2_api.main.id
-  integration_type   = "AWS_PROXY"
-  integration_uri    = aws_lambda_function.api.invoke_arn
-  integration_method = "POST"
+  api_id                 = aws_apigatewayv2_api.main.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api.invoke_arn
+  integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
@@ -193,6 +193,8 @@ resource "aws_lambda_function" "ssr" {
   role          = aws_iam_role.lambda_exec.arn
   handler       = "server.handler"
   runtime       = "nodejs24.x"
+  timeout       = 10
+  memory_size   = 512
 
   vpc_config {
     subnet_ids         = var.subnet_ids
@@ -201,8 +203,7 @@ resource "aws_lambda_function" "ssr" {
 
   environment {
     variables = {
-      S3_BUCKET = var.website_bucket_id
-      NG_ALLOWED_HOSTS = aws_apigatewayv2_api.main.api_endpoint
+      NG_ALLOWED_HOSTS = replace(aws_apigatewayv2_api.ssr.api_endpoint, "https://", "")
     }
   }
 
@@ -246,10 +247,10 @@ resource "aws_apigatewayv2_stage" "ssr" {
 }
 
 resource "aws_apigatewayv2_integration" "ssr" {
-  api_id             = aws_apigatewayv2_api.ssr.id
-  integration_type   = "AWS_PROXY"
-  integration_uri    = aws_lambda_function.ssr.invoke_arn
-  integration_method = "POST"
+  api_id                 = aws_apigatewayv2_api.ssr.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.ssr.invoke_arn
+  integration_method     = "POST"
   payload_format_version = "2.0"
 }
 

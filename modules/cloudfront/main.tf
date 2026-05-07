@@ -53,15 +53,15 @@ resource "aws_cloudfront_distribution" "this" {
 
   # Cache behavior for static assets
   ordered_cache_behavior {
-    path_pattern     = "/assets/*"
-    allowed_methods  = ["GET", "HEAD"]
+    path_pattern     = "index.html"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${var.website_bucket_id}"
+    target_origin_id = "SSR-Lambda"
 
     forwarded_values {
-      query_string = false
+      query_string = true
       cookies {
-        forward = "none"
+        forward = "all"
       }
     }
 
@@ -72,7 +72,7 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   ordered_cache_behavior {
-    path_pattern     = "*.js"
+    path_pattern     = "*.*"
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3-${var.website_bucket_id}"
@@ -89,26 +89,7 @@ resource "aws_cloudfront_distribution" "this" {
     default_ttl            = 86400
     max_ttl                = 31536000
   }
-
-  ordered_cache_behavior {
-    path_pattern     = "*.css"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${var.website_bucket_id}"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 86400
-    max_ttl                = 31536000
-  }
-
+  
   restrictions {
     geo_restriction {
       restriction_type = "none"

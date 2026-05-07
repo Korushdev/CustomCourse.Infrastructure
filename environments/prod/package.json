@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@codegenie/serverless-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.161"
+  }
+}
