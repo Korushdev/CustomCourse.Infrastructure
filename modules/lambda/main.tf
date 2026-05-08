@@ -1,7 +1,6 @@
 resource "aws_security_group" "lambda" {
   name        = "${var.project_name}-${var.environment}-lambda-sg"
   description = "Security group for Lambda"
-  vpc_id      = var.vpc_id
 
   egress {
     from_port   = 0
@@ -74,6 +73,42 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_attach" {
   policy_arn = aws_iam_policy.lambda_s3.arn
 }
 
+resource "aws_secretsmanager_secret" "appsettings" {
+  name        = var.api_secret_name
+  description = "Appsettings for ${var.project_name} API"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_iam_policy" "lambda_secrets" {
+  name        = "${var.project_name}-${var.environment}-lambda-secrets-policy"
+  description = "Allow Lambda to read appsettings secret"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["secretsmanager:GetSecretValue"]
+        Effect   = "Allow"
+        Resource = [aws_secretsmanager_secret.appsettings.arn]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_secrets_attach" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = aws_iam_policy.lambda_secrets.arn
+}
+
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-api"
   retention_in_days = var.log_retention_days
@@ -101,15 +136,16 @@ resource "aws_lambda_function" "api" {
   handler       = var.api_handler
   runtime       = "dotnet10"
   architectures = ["arm64"]
-
-  vpc_config {
-    subnet_ids         = var.subnet_ids
-    security_group_ids = [aws_security_group.lambda.id]
-  }
+  timeout       = 30
+  memory_size   = 512
 
   environment {
     variables = {
-      S3_BUCKET = var.assets_bucket_id
+      S3_BUCKET        = var.assets_bucket_id
+      APPSETTINGS_SECRET_ID = aws_secretsmanager_secret.appsettings.id
+      SECRET_NAME = aws_secretsmanager_secret.appsettings.name
+      DOTNET_ENVIRONMENT = var.environment
+      ASPNETCORE_ENVIRONMENT = var.environment
     }
   }
 
@@ -217,13 +253,8 @@ resource "aws_lambda_function" "ssr" {
   role          = aws_iam_role.lambda_exec.arn
   handler       = "server.handler"
   runtime       = "nodejs24.x"
-  timeout       = 10
-  memory_size   = 512
-
-  vpc_config {
-    subnet_ids         = var.subnet_ids
-    security_group_ids = [aws_security_group.lambda.id]
-  }
+  timeout       = 5
+  memory_size   = 256
 
   environment {
     variables = {

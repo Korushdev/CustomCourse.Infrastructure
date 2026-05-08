@@ -1,7 +1,3 @@
-output "vpc_id" {
-  value = module.vpc.vpc_id
-}
-
 output "api_endpoint" {
   value = module.lambda_api.api_endpoint
 }

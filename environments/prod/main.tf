@@ -56,16 +56,6 @@ module "acm_api" {
   zone_id      = module.dns.zone_id
 }
 
-module "vpc" {
-  source               = "../../modules/vpc"
-  project_name         = var.project_name
-  environment          = var.environment
-  vpc_cidr             = var.vpc_cidr
-  public_subnet_cidrs  = var.public_subnet_cidrs
-  availability_zones   = var.availability_zones
-  log_retention_days   = 7
-}
-
 module "assets_s3" {
   source      = "../../modules/s3"
   project_name = var.project_name
@@ -86,24 +76,21 @@ module "lambda_api" {
   source             = "../../modules/lambda"
   project_name       = var.project_name
   environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
-  subnet_ids         = module.vpc.public_subnet_ids
   assets_bucket_arn  = module.assets_s3.bucket_arn
   assets_bucket_id   = module.assets_s3.bucket_id
   website_bucket_arn = module.website_s3.bucket_arn
-  website_bucket_id  = module.website_s3.bucket_id
+  subnet_ids = var.public_subnet_ids
   log_retention_days = 7
   api_domain_name    = "api.${var.domain_name}"
   api_handler = "WebApi"
   certificate_arn    = module.acm_api.certificate_arn
+  api_secret_name   = var.api_secret_name
 }
 
 module "rds" {
   source                    = "../../modules/rds"
   project_name              = var.project_name
   environment               = var.environment
-  vpc_id                    = module.vpc.vpc_id
-  subnet_ids                = module.vpc.public_subnet_ids
   master_password           = data.aws_secretsmanager_secret_version.db_password.secret_string
   allowed_security_group_id = module.lambda_api.lambda_sg_id
 }

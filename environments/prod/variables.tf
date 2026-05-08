@@ -19,10 +19,9 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "public_subnet_cidrs" {
-  description = "CIDR blocks for public subnets"
+variable "public_subnet_ids" {
+  description = "Public subnets"
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "availability_zones" {
@@ -48,4 +47,9 @@ variable "api_repo_id" {
 variable "domain_name" {
   description = "Custom domain name"
   type        = string
+}
+
+variable "api_secret_name" {
+  description = "The name of the api secret"
+  type = string
 }

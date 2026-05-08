@@ -8,11 +8,6 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID"
-  type        = string
-}
-
 variable "subnet_ids" {
   description = "List of subnet IDs"
   type        = list(string)
@@ -26,12 +21,6 @@ variable "assets_bucket_arn" {
 variable "assets_bucket_id" {
   description = "ID of the assets S3 bucket"
   type        = string
-}
-
-variable "website_bucket_id" {
-  description = "ID of the website S3 bucket"
-  type        = string
-  default     = ""
 }
 
 variable "website_bucket_arn" {
@@ -61,4 +50,9 @@ variable "certificate_arn" {
   description = "ACM certificate ARN for API"
   type        = string
   default     = ""
+}
+
+variable "api_secret_name" {
+  description = "The name for the api secret"
+  type        = string
 }
