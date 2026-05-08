@@ -94,6 +94,7 @@ module "lambda_api" {
   website_bucket_id  = module.website_s3.bucket_id
   log_retention_days = 7
   api_domain_name    = "api.${var.domain_name}"
+  api_handler = "WebApi"
   certificate_arn    = module.acm_api.certificate_arn
 }
 

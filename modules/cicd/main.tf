@@ -242,7 +242,7 @@ resource "aws_codebuild_project" "api_build" {
             - export PATH="$PATH:/root/.dotnet"
         build:
           commands:
-            - dotnet publish -c Release -o out
+            - dotnet publish src/WebApi/WebApi.csproj -c Release -o out
         post_build:
           commands:
             - cd out && zip -r ../lambda-api.zip . && cd ..

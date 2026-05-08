@@ -52,6 +52,11 @@ variable "api_domain_name" {
   default     = ""
 }
 
+variable "api_handler" {
+  description = "YourAssemblyName::YourNamespace.LambdaEntryPoint::FunctionHandlerAsync"
+  type        = string
+}
+
 variable "certificate_arn" {
   description = "ACM certificate ARN for API"
   type        = string
