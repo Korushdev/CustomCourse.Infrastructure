@@ -127,6 +127,10 @@ data "archive_file" "lambda_zip" {
     content  = "exports.handler = async (event) => { return { statusCode: 200, body: 'Hello' }; };"
     filename = "index.js"
   }
+  source {
+    content  = "dummy"
+    filename = "global-bundle.pem"
+  }
 }
 
 resource "aws_lambda_function" "api" {

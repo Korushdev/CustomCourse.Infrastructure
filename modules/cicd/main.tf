@@ -243,6 +243,7 @@ resource "aws_codebuild_project" "api_build" {
         build:
           commands:
             - dotnet publish src/WebApi/WebApi.csproj -c Release -o out
+            - wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O out/global-bundle.pem
         post_build:
           commands:
             - cd out && zip -r ../lambda-api.zip . && cd ..
