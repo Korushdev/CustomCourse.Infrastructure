@@ -32,6 +32,23 @@ resource "aws_route53_record" "api" {
   }
 }
 
+
+resource "aws_route53_record" "mail_spf" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = var.mail_spf_record_name
+  type    = "TXT"
+  ttl     = 300
+  records = [var.mail_spf_record_value]
+}
+
+resource "aws_route53_record" "mail_dkim" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = var.mail_dkim_record_name
+  type    = "TXT"
+  ttl     = 300
+  records = [var.mail_dkim_record_value]
+}
+
 output "zone_id" {
   value = aws_route53_zone.main.zone_id
 }

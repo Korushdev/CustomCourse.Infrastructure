@@ -1,3 +1,7 @@
+data "aws_cloudfront_response_headers_policy" "cors_security_headers" {
+  name = "Managed-CORS-with-preflight-and-SecurityHeadersPolicy"
+}
+
 resource "aws_cloudfront_origin_access_control" "this" {
   name                              = "${var.project_name}-${var.environment}-oac"
   description                       = "OAC for ${var.project_name} ${var.environment} website bucket"
@@ -51,6 +55,7 @@ resource "aws_cloudfront_distribution" "this" {
     min_ttl                = 0
     default_ttl            = 0 # Usually you want SSR to be fresh or controlled by headers
     max_ttl                = 86400
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.cors_security_headers.id
   }
 
   # Cache behavior for static assets
@@ -71,6 +76,7 @@ resource "aws_cloudfront_distribution" "this" {
     min_ttl                = 0
     default_ttl            = 86400
     max_ttl                = 31536000
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.cors_security_headers.id
   }
 
   ordered_cache_behavior {
@@ -90,6 +96,7 @@ resource "aws_cloudfront_distribution" "this" {
     min_ttl                = 0
     default_ttl            = 86400
     max_ttl                = 31536000
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.cors_security_headers.id
   }
   
   restrictions {

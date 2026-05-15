@@ -246,10 +246,7 @@ resource "aws_codebuild_project" "api_build" {
             - wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O out/global-bundle.pem
         post_build:
           commands:
-            - ls -la out
-            - test -f out/global-bundle.pem
             - cd out && zip -r ../lambda-api.zip . && cd ..
-            - unzip -l lambda-api.zip | grep global-bundle.pem
             - aws lambda update-function-code --function-name $API_LAMBDA_FUNCTION_NAME --zip-file fileb://lambda-api.zip
     EOF
   }

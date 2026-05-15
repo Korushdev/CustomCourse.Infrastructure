@@ -53,3 +53,23 @@ variable "api_secret_name" {
   description = "The name of the api secret"
   type = string
 }
+
+variable "mail_spf_record_name" {
+  description = "mail. txt record used for mailgun SPF validation"
+  type        = string
+}
+
+variable "mail_spf_record_value" {
+  description = "mail. txt record used for mailgun SPF validation"
+  type        = string
+}
+
+variable "mail_dkim_record_name" {
+  description = "mail. txt record used for mailgun DKIM validation"
+  type        = string
+}
+
+variable "mail_dkim_record_value" {
+  description = "mail. txt record used for mailgun DKIM validation"
+  type        = string
+}

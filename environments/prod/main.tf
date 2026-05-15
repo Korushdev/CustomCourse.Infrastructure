@@ -37,6 +37,10 @@ module "dns" {
   cloudfront_hosted_zone_id = module.cloudfront.cloudfront_hosted_zone_id
   api_gateway_domain_name   = module.lambda_api.api_gateway_domain_name
   api_gateway_hosted_zone_id = module.lambda_api.api_gateway_hosted_zone_id
+  mail_spf_record_name = var.mail_spf_record_name
+  mail_spf_record_value = var.mail_spf_record_value
+  mail_dkim_record_name = var.mail_dkim_record_name
+  mail_dkim_record_value = var.mail_dkim_record_value
 }
 
 module "acm_cloudfront" {
